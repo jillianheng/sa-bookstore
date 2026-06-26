@@ -2,9 +2,14 @@ const express = require('express');
 const path = require('path');
 const exphbs = require('express-handlebars');
 require('dotenv').config();
-const stripe = require('stripe');
-
 var app = express();
+
+// Retrieve API Keys from .env file and load Stripe
+const config = {
+  secretKey: process.env.STRIPE_SECRET_KEY,
+  publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+}
+const stripe = require("stripe")(config.secretKey);
 
 // view engine setup (Handlebars)
 app.engine('hbs', exphbs({
@@ -54,6 +59,34 @@ app.get('/checkout', function(req, res) {
     title: title,
     amount: amount,
     error: error
+  });
+});
+
+/**
+ * Create payment intent route
+ * req body: {amount : amount (in cents)}
+ */
+app.post("/create-payment-intent", async (req, res) => {
+  // Create a PaymentIntent with the order amount
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: req.body.amount * 100, // Convert back to dollars
+    currency: "sgd", // Hardcoded for now
+    automatic_payment_methods: { // Default to show all available payment methods
+      enabled: true,
+    },
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret
+  });
+});
+
+/**
+ * Helper route to return publishable key for UI
+ */
+app.get('/get-publishable-key', function(req, res) {
+  res.send({
+    publishableKey: config.publishableKey
   });
 });
 

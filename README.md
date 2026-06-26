@@ -1,29 +1,40 @@
-# Take home project
-This is a simple e-commerce application that a customer can use to purchase a book, but it's missing the payments functionality —  your goal is to integrate Stripe to get this application running!
-
-## Candidate instructions
-You'll receive these in email.
-
 ## Application overview
-This demo is written in Javascript (Node.js) with the [Express framework](https://expressjs.com/). You'll need to retrieve a set of testmode API keys from the Stripe dashboard (you can create a free test account [here](https://dashboard.stripe.com/register)) to run this locally.
+The purpose of this demo is to demonstrate the Stripe checkout flow using the [Stripe Payment Element](https://docs.stripe.com/js/element/payment_element)
 
-We're using the [Bootstrap](https://getbootstrap.com/docs/4.6/getting-started/introduction/) CSS framework. It's the most popular CSS framework in the world and is pretty easy to get started with — feel free to modify styles/layout if you like. 
+## Prerequisites
+This demo is written in Javascript (Node.js) with the [Express framework](https://expressjs.com/).
 
-To simplify this project, we're also not using any database here, either. Instead `app.js` includes a simple switch statement to read the GET params for `item`. 
+- [node.js](https://nodejs.org/en)
+- `npm` package manager
+- Test Stripe account Test Mode API keys. Register for free [here](https://dashboard.stripe.com/register).
 
-To get started, clone the repository and run `npm install` to install dependencies:
+## Getting Started
+### Configuration
+Before getting started, rename `sample.env` to `.env` and populate with your Stripe account's test API keys
 
+The Secret key and Publishable key can be found on the Stripe Dashboard > Developers > API Keys and should begin with `sk_test` and `pk_test` respectively.
+
+### Installation
+1. Clone the repository to your local machine
 ```
-git clone https://github.com/mattmitchell6/sa-takehome-project-node && cd sa-takehome-project-node
-npm install
+git clone https://github.com/jillianheng/sa-bookstore
 ```
+2. Navigate into the directory with `cd sa-bookstore`
+3. Install the package with `npm install`
+4. Run the application locally with `npm start`
+5. Navigate to [http://localhost:3000](http://localhost:3000) to view the application
 
-Rename `sample.env` to `.env` and populate with your Stripe account's test API keys
+## Usage
+1. Select item to purchase
+2. Redirect to Checkout Page with Stripe Payment Element. By default, all available payment methods are enabled, including Stripe Link.
+-  For Card Payments, use Stripe's [Test Cards](https://docs.stripe.com/testing)
+    - Sample Card Number: `4242 4242 4242 4242`, with any future dated expiry and 3 digit CVV'
+- For Link Payments, select `Secure, fast checkout with Link` and input an email address. Reuse this email address for subsequent checkouts to see saved payment methods.
+3. Redirect to confirmation page
 
-Then run the application locally:
-
-```
-npm start
-```
-
-Navigate to [http://localhost:3000](http://localhost:3000) to view the index page.
+### References
+- [Original GitHub Project](https://github.com/mattmitchell6/sa-takehome-project-node)
+- [Stripe JS docs](https://docs.stripe.com/js)
+- [Stripe npm Package](https://github.com/stripe/stripe-js)
+- [Stripe Payment Elements](https://docs.stripe.com/payments/elements) and [Demo](https://checkout.stripe.dev/elements)
+- [Stripe API docs](https://docs.stripe.com/api)
