@@ -98,13 +98,51 @@ app.get('/checkout', function(req, res) {
 });
 
 /**
+ * Create checkout session route
+ * req body: { title : title, amount : amount (in dollars) }
+ */
+app.post("/create-checkout-session", async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    ui_mode: "elements",
+    line_items: [
+      {
+        price_data: {
+          currency: "sgd", // Hardcoded for now
+          unit_amount: req.body.amount * 100, // Convert back to cents
+          product_data: {
+            name: req.body.title
+          }
+        },
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    return_url: 'http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}'
+  });
+
+  res.send({ clientSecret: session.client_secret });
+});
+
+/**
+ * Get checkout session route
+ */
+app.get("/session-status", async (req, res) => {
+  const session = await stripe.checkout.sessions.retrieve(req.query.session_id, { expand: ["payment_intent"] });
+  res.send({
+    status: session.status,
+    payment_status: session.payment_status,
+    payment_intent: session.payment_intent
+  });
+});
+
+/**
  * Create payment intent route
- * req body: {amount : amount (in cents)}
+ * req body: { amount : amount (in dollars) }
  */
 app.post("/create-payment-intent", async (req, res) => {
   // Create a PaymentIntent with the order amount
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: req.body.amount * 100, // Convert back to dollars
+    amount: req.body.amount * 100, // Convert back to cents
     currency: "sgd", // Hardcoded for now
     automatic_payment_methods: { // Default to show all available payment methods
       enabled: true,

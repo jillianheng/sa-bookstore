@@ -34,13 +34,27 @@ git clone https://github.com/jillianheng/sa-bookstore
 
 ## Usage
 1. Select item to purchase
-2. Redirect to Checkout Page with Stripe Payment Element. By default, all available payment methods are enabled, including Stripe Link.
+2. Redirect to Checkout Page with Stripe Payment Element. Stripe Payment Element is compatible with both [Payment Intents API](https://docs.stripe.com/api/payment_intents) and [Checkout Sessions API](https://docs.stripe.com/api/checkout/sessions) *(recommended)*.
+| | Payment Intents API | Checkout Sessions API |
+| -------- | -------- | -------- |
+| Checkout Flow | Fully custom with low level API | Out of the Box Stripe Capabilities |
+| [Multi Step Checkout Flow](https://docs.stripe.com/payments/build-a-two-step-confirmation) | Yes | No |
+| Integration Effort | Higher maintenance and development effort | Lower effort |
+
+For more details between the two APIs, refer to Stripe documentation [here](https://docs.stripe.com/payments/checkout-sessions-and-payment-intents-comparison).
+
+Both APIs have been integrated in this demo for reference. 
+- Select Item 1 *(The Art of Doing Science and Engineering)* for Checkout Sessions API
+- Select Item 2 *(The Making of Prince of Persia: Journals 1985-1993)* for enhanced capabilties with Checkout Sessions API
+- Select Item 3 *(Working in Public: The Making and Maintenance of Open Source)* for Payment Intent API
+
+3. Complete Payment on the checkout page. By default, all available payment methods are enabled, including Stripe Link.
 -  For Card Payments, use Stripe's [Test Cards](https://docs.stripe.com/testing)
     - Sample Card Number: `4242 4242 4242 4242`, with any future dated expiry and 3 digit CVV'
 - For Link Payments, select `Secure, fast checkout with Link` and input an email address. Reuse this email address for subsequent checkouts to see saved payment methods.
-3. Redirect to confirmation page and receive corresponding `payment_intent.succeeded` webhook event
+4. Redirect to confirmation page and receive corresponding `payment_intent.succeeded` webhook event
 
-### References
+## References
 - [Original GitHub Project](https://github.com/mattmitchell6/sa-takehome-project-node)
 - [Stripe JS docs](https://docs.stripe.com/js)
 - [Stripe npm Package](https://github.com/stripe/stripe-js)

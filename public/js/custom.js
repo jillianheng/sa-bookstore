@@ -25,22 +25,36 @@ async function initializeStripe() {
 
 // --- CONFIRMATION FLOW INCLUDES RETRIEVING INTENT DETAILS AND DISPLAYING PAYMENT ---
 function startConfirmationFlow() {
-  initializeStripe().then(stripe => {
-    // Retrieve URL query params included by Stripe during redirect
-    // http://localhost:3000/success?payment_intent=pi_xxx&payment_intent_client_secret=pi_xxx_secret_yyy&redirect_status=succeeded
-    const paymentIntentSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
-    
-    // Get payment intent details
-    stripe.retrievePaymentIntent(paymentIntentSecret).then(res => {
-      // Handle Payment intent details
-      if (res.paymentIntent) {
-        displayPaymentDetails(res.paymentIntent);
-      }
-      else if (res.error) {
-        displayError(res.error)
-      }
+  // Retrieve URL query params included by Stripe during redirect
+  // IF Payment Intent API: http://localhost:3000/success?payment_intent=pi_xxx&payment_intent_client_secret=pi_xxx_secret_yyy&redirect_status=succeeded
+  // IF Checkout Session API: http://localhost:3000/success?session_id=cs_test_xxx
+  const paymentIntentSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
+  const checkoutSessionId = new URLSearchParams(window.location.search).get("session_id");
+  
+  // Retrieve checkout session details
+  if (checkoutSessionId) {
+    fetch(`/session-status?session_id=${checkoutSessionId}`).then(res => {
+      sessionDetails = res.json().then(sessionDetails => {
+        displayPaymentDetails(sessionDetails.payment_intent)
+      });
     });
-  })
+  }
+
+  // Retrieve payment intent details
+  if (paymentIntentSecret) {
+    initializeStripe().then(stripe => { 
+      // Get payment intent details
+      stripe.retrievePaymentIntent(paymentIntentSecret).then(res => {
+        // Handle Payment intent details
+        if (res.paymentIntent) {
+          displayPaymentDetails(res.paymentIntent);
+        }
+        else if (res.error) {
+          displayError(res.error)
+        }
+      });
+    })
+  }
 }
 
 // --- CHECKOUT FLOW INCLUDES CONVERTING AMOUNT, DISPLAYING ELEMENT AND COMPLETING PAYMENT ---
@@ -56,8 +70,72 @@ function startCheckoutFlow() {
 
   // Initialize payment with item details
   if (amount && amount != 0) {
-    initializePayment(amount)
+    const title = document.querySelector("#title").innerText;
+    // Use different checkout flow based on item number
+    const itemNumber = new URLSearchParams(window.location.search).get("item");
+    switch (itemNumber) {
+      case '1':
+        initializeSession(title, amount);
+        break;
+      case '2':
+        break;
+      case '3':
+        initializePayment(amount)
+        break;
+      default:
+        alert("Invalid item number. Redirecting back to home page.");
+        window.location.href = "/";
+    }
   }
+}
+
+// Initialize session and display element
+async function initializeSession(title, amount) {
+  // Create a session
+  const response = await fetch("/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: title, amount: amount })
+  });
+  const { clientSecret } = await response.json(); 
+  initializeStripe().then(async stripe => {
+    const appearance = {
+      theme: 'stripe',
+    };
+    checkout = stripe.initCheckoutElementsSdk({
+      clientSecret: clientSecret,
+      elementsOptions: { appearance },
+    });
+
+    checkout.on('change', (session) => {
+      // Handle changes to the checkout session
+      document.getElementById('submit').disabled = !session.canConfirm;
+    });
+
+    const loadActionsResult = await checkout.loadActions();
+    if (loadActionsResult.type === 'success') {
+      actions = loadActionsResult.actions;
+      const session = loadActionsResult.actions.getSession();
+      document.querySelector("#button-text").textContent = `Pay ${session.total.total.amount}`;
+    }
+
+    const contactDetailsElement = checkout.createContactDetailsElement();
+    contactDetailsElement.mount("#contact-details-element");
+    const paymentElement = checkout.createPaymentElement();
+    paymentElement.mount("#payment-element");
+    const addressElement = checkout.createShippingAddressElement();
+    addressElement.mount("#address-element");
+
+    // Add event handler to payment submission
+    document.querySelector("#payment-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setLoading(true);
+
+      const { error } = await actions.confirm();
+      showMessage(error.message);
+      setLoading(false);
+    })
+  })
 }
 
 // Initialize payment and display element
@@ -82,11 +160,11 @@ async function initializePayment(amount) {
     };
 
     const contactDetailElement = elements.create("contactDetails");
-    const paymentElement = elements.create("payment", paymentElementOptions);
-    const addressElement = elements.create("address", options);
-    paymentElement.mount("#payment-element");
-    addressElement.mount("#address-element");
     contactDetailElement.mount('#contact-details-element');
+    const paymentElement = elements.create("payment", paymentElementOptions);
+    paymentElement.mount("#payment-element");
+    const addressElement = elements.create("address", options);
+    addressElement.mount("#address-element");
 
     // Add event handler to payment submission
     document.querySelector("#payment-form").addEventListener("submit", async (e) => {
@@ -119,14 +197,12 @@ function displayPaymentDetails(paymentIntent) {
   if (paymentIntent.status == "succeeded") {
     document.querySelector("#error").hidden = true;
     var amountString = paymentIntent.currency.toUpperCase() + " " + paymentIntent.amount/100;
-    paymentDetails.innerHTML = "Thank you for your purchase. Your order has been completed." + 
-    "<br><br><b>Order ID</b>: " + paymentIntent.id +
-    "<br><b>Amount</b>: " + amountString
+    paymentDetails.innerHTML = `Thank you for your purchase. Your order has been completed. <br><br><b>Order ID</b>: ${paymentIntent.id} <br><b>Amount</b>: ${amountString}`
   }
   else {
     document.querySelector("#error").hidden = false;
     document.querySelector("#success").hidden = true;
-    paymentDetails.innerHTML = "Order ID: " + paymentIntent.id + " has failed. Please try again.";
+    paymentDetails.innerHTML = `Order ID: ${paymentIntent.id} has failed. Please try again.`;
   }
 }
 
@@ -138,11 +214,9 @@ function displayError(error) {
 
 // ------- UI helpers for Checkout flow -------
 // From Stripe documents
-
 function showMessage(messageText) {
   const messageContainer = document.querySelector("#payment-message");
-
-  messageContainer.classList.hidden = false;
+  messageContainer.hidden = false;
   messageContainer.textContent = messageText;
 
   setTimeout(function () {

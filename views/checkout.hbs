@@ -5,7 +5,7 @@
         Checkout — Stripe Press
       </h1>
       <h5 class="text-secondary">
-        {{title}}
+        <span id="title">{{title}}</span>
       </h5>
       <hr class="mt-40">
       <div class="mt-20 text-info">
@@ -29,7 +29,7 @@
           </div>
           <div class="mt-20">
             <div class="spinner" hidden id="spinner"></div>
-            <button type="submit" id="submit" class="btn btn-lg btn-block btn-primary">Pay $<span class="amount" data-amount="{{amount}}"></span></button>
+            <button type="submit" id="submit" class="btn btn-lg btn-block btn-primary"><span id="button-text">Pay $<span class="amount" data-amount="{{amount}}"></span></span></button>
             <div id="payment-message" hidden></div>
           </div>
         </form>
