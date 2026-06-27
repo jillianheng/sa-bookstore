@@ -75,9 +75,20 @@ function startCheckoutFlow() {
     const itemNumber = new URLSearchParams(window.location.search).get("item");
     switch (itemNumber) {
       case '1':
-        initializeSession(title, amount);
+        var options = {
+          title: title,
+          amount: amount
+        }
+        initializeSession(options);
         break;
       case '2':
+         var options = {
+          title: title,
+          amount: amount,
+          adaptivePricing: true,
+          shippingOptions: true
+        }
+        initializeSession(options);
         break;
       case '3':
         initializePayment(amount)
@@ -90,12 +101,12 @@ function startCheckoutFlow() {
 }
 
 // Initialize session and display element
-async function initializeSession(title, amount) {
+async function initializeSession(options) {
   // Create a session
   const response = await fetch("/create-checkout-session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: title, amount: amount })
+    body: JSON.stringify({ title: options.title, amount: options.amount, shippingOptions: options.shippingOptions })
   });
   const { clientSecret } = await response.json(); 
   initializeStripe().then(async stripe => {
@@ -105,6 +116,9 @@ async function initializeSession(title, amount) {
     checkout = stripe.initCheckoutElementsSdk({
       clientSecret: clientSecret,
       elementsOptions: { appearance },
+      adaptivePricing: {
+        allowed: options.adaptivePricing
+      }
     });
 
     checkout.on('change', (session) => {
@@ -119,6 +133,10 @@ async function initializeSession(title, amount) {
       document.querySelector("#button-text").textContent = `Pay ${session.total.total.amount}`;
     }
 
+    if (options.adaptivePricing) {
+      const currencySelectorElement = checkout.createCurrencySelectorElement();
+      currencySelectorElement.mount('#currency-selector-element');
+    }
     const contactDetailsElement = checkout.createContactDetailsElement();
     contactDetailsElement.mount("#contact-details-element");
     const paymentElement = checkout.createPaymentElement();
@@ -193,10 +211,15 @@ async function initializePayment(amount) {
 // ------- UI helpers for Confirmation flow ------
 // Display Payment Intent ID and amount
 function displayPaymentDetails(paymentIntent) {
+  console.log(paymentIntent);
     const paymentDetails = document.querySelector("#payment-details");
   if (paymentIntent.status == "succeeded") {
     document.querySelector("#error").hidden = true;
-    var amountString = paymentIntent.currency.toUpperCase() + " " + paymentIntent.amount/100;
+    // Display correct payment amount to account for Adaptive Pricing
+    var amountString = `${paymentIntent.currency.toUpperCase()} ${paymentIntent.amount/100}`;
+    if (paymentIntent.presentment_details.presentment_amount) {
+      amountString = `${paymentIntent.presentment_details.presentment_currency.toUpperCase()} ${paymentIntent.amount}`;
+    }
     paymentDetails.innerHTML = `Thank you for your purchase. Your order has been completed. <br><br><b>Order ID</b>: ${paymentIntent.id} <br><b>Amount</b>: ${amountString}`
   }
   else {

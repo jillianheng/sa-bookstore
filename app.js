@@ -99,15 +99,41 @@ app.get('/checkout', function(req, res) {
 
 /**
  * Create checkout session route
- * req body: { title : title, amount : amount (in dollars) }
+ * req body: { title : title, amount : amount (in dollars), shippingOptions : bool }
  */
 app.post("/create-checkout-session", async (req, res) => {
-  const session = await stripe.checkout.sessions.create({
+
+  var shippingOptions;
+  if (req.body.shippingOptions) {
+    shippingOptions = [
+      {
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: {
+            amount: 500,
+            currency: 'usd',
+          },
+          display_name: 'Standard shipping',
+          delivery_estimate: {
+            minimum: {
+              unit: 'business_day',
+              value: 5,
+            },
+            maximum: {
+              unit: 'business_day',
+              value: 7,
+            },
+          },
+        },
+      }
+    ]
+  };
+  var session = await stripe.checkout.sessions.create({
     ui_mode: "elements",
     line_items: [
       {
         price_data: {
-          currency: "sgd", // Hardcoded for now
+          currency: "usd", // Hardcoded for now
           unit_amount: req.body.amount * 100, // Convert back to cents
           product_data: {
             name: req.body.title
@@ -117,7 +143,8 @@ app.post("/create-checkout-session", async (req, res) => {
       },
     ],
     mode: 'payment',
-    return_url: 'http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}'
+    return_url: 'http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}',
+    shipping_options: shippingOptions
   });
 
   res.send({ clientSecret: session.client_secret });
@@ -143,7 +170,7 @@ app.post("/create-payment-intent", async (req, res) => {
   // Create a PaymentIntent with the order amount
   const paymentIntent = await stripe.paymentIntents.create({
     amount: req.body.amount * 100, // Convert back to cents
-    currency: "sgd", // Hardcoded for now
+    currency: "usd", // Hardcoded for now
     automatic_payment_methods: { // Default to show all available payment methods
       enabled: true,
     },

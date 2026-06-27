@@ -45,7 +45,7 @@ For more details between the two APIs, refer to Stripe documentation [here](http
 
 Both APIs have been integrated in this demo for reference. 
 - Select Item 1 *(The Art of Doing Science and Engineering)* for Checkout Sessions API
-- Select Item 2 *(The Making of Prince of Persia: Journals 1985-1993)* for enhanced capabilties with Checkout Sessions API
+- Select Item 2 *(The Making of Prince of Persia: Journals 1985-1993)* for enhanced capabilties with Checkout Sessions API. This includes Adaptive Pricing, Shipping Charges
 - Select Item 3 *(Working in Public: The Making and Maintenance of Open Source)* for Payment Intent API
 
 3. Complete Payment on the checkout page. By default, all available payment methods are enabled, including Stripe Link.
