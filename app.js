@@ -7,9 +7,44 @@ var app = express();
 // Retrieve API Keys from .env file and load Stripe
 const config = {
   secretKey: process.env.STRIPE_SECRET_KEY,
-  publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+  publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  endpointSecret: process.env.STRIPE_WEBHOOK_SECRET
 }
 const stripe = require("stripe")(config.secretKey);
+
+/**
+ * Set up endpoint to subscribe to Stripe webhook events.
+ */
+app.post('/webhook', express.raw({type: 'application/json'}), (request, response) => {
+  let event = request.body;
+  // Check that signature for webhook matches
+  if (config.endpointSecret) {
+    const signature = request.headers['stripe-signature'];
+    try {
+      event = stripe.webhooks.constructEvent(request.body, signature, config.endpointSecret);
+    }
+    catch (err) {
+      console.log(err);
+      return response.sendStatus(400);
+    }
+  }
+
+  // Handle events
+  switch (event.type) {
+      case 'payment_intent.succeeded':
+        // Additional logic can be implemented here:
+        // eg. Inventory management, shipping request, email receipts
+        const paymentIntent = event.data.object;
+        console.log(`PaymentIntent for ${paymentIntent.currency} ${paymentIntent.amount/100} was successful!`);
+        break;
+      // ... handle other event types
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+  }
+
+  // Return a response to acknowledge receipt of the event
+  response.send();
+});
 
 // view engine setup (Handlebars)
 app.engine('hbs', exphbs({
