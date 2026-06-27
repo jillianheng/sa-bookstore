@@ -81,10 +81,12 @@ async function initializePayment(amount) {
         layout: "accordion",
     };
 
+    const contactDetailElement = elements.create("contactDetails");
     const paymentElement = elements.create("payment", paymentElementOptions);
     const addressElement = elements.create("address", options);
     paymentElement.mount("#payment-element");
     addressElement.mount("#address-element");
+    contactDetailElement.mount('#contact-details-element');
 
     // Add event handler to payment submission
     document.querySelector("#payment-form").addEventListener("submit", async (e) => {
@@ -96,7 +98,6 @@ async function initializePayment(amount) {
         confirmParams: {
           // Make sure to change this to your payment completion page
           return_url: "http://localhost:3000/success",
-          receipt_email: document.getElementById("email").value // Optional to trigger Stripe email in Live mode
         },
       }).then(error => {
         // Error handling
@@ -118,8 +119,7 @@ function displayPaymentDetails(paymentIntent) {
   if (paymentIntent.status == "succeeded") {
     document.querySelector("#error").hidden = true;
     var amountString = paymentIntent.currency.toUpperCase() + " " + paymentIntent.amount/100;
-    paymentDetails.innerHTML = "Thank you for your purchase. Your order for has been completed. <br> A receipt has also been sent to " + 
-    paymentIntent.receipt_email +
+    paymentDetails.innerHTML = "Thank you for your purchase. Your order has been completed." + 
     "<br><br><b>Order ID</b>: " + paymentIntent.id +
     "<br><b>Amount</b>: " + amountString
   }

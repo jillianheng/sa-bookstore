@@ -15,16 +15,17 @@
     <div class="card box-shadow mt-40">
       <div class="card-body">
         <form name="payment-form" id="payment-form">
-          <div>
-            <label for="email">Email address</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="you@email.com">
-          </div>
-          <div id="payment-element" class="mt-20 text-center text-secondary border-placeholder">
-            <!--Stripe Payment Element included here-->
+          Contact Details
+          <div id="contact-details-element" class="mt-20 text-center text-secondary border-placeholder">
+            <!--Stripe Contact Details Element included here-->
           </div>
           <br>Shipping address
           <div id="address-element" class="mt-20 text-center text-secondary border-placeholder">
           <!--Stripe Address Element included here-->
+          </div>
+          <br> Payment Method
+          <div id="payment-element" class="mt-20 text-center text-secondary border-placeholder">
+            <!--Stripe Payment Element included here-->
           </div>
           <div class="mt-20">
             <div class="spinner" hidden id="spinner"></div>
