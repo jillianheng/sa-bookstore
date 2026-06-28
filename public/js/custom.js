@@ -100,6 +100,7 @@ function startCheckoutFlow() {
   }
 }
 
+// Using Checkout Sessions API
 // Initialize session and display element
 async function initializeSession(options) {
   // Create a session
@@ -110,6 +111,7 @@ async function initializeSession(options) {
   });
   const { clientSecret } = await response.json(); 
   initializeStripe().then(async stripe => {
+    var actions;
     const appearance = {
       theme: 'stripe',
     };
@@ -121,22 +123,27 @@ async function initializeSession(options) {
       }
     });
 
-    checkout.on('change', (session) => {
+    checkout.on('change', async (session) => {
       // Handle changes to the checkout session
       document.getElementById('submit').disabled = !session.canConfirm;
+      const loadActionsResult = await checkout.loadActions();
+      if (loadActionsResult.type === 'success') {
+        actions = loadActionsResult.actions;
+        const session = loadActionsResult.actions.getSession();
+        document.querySelector("#button-text").textContent = `Pay ${session.total.total.amount}`;
+      }
     });
 
-    const loadActionsResult = await checkout.loadActions();
-    if (loadActionsResult.type === 'success') {
-      actions = loadActionsResult.actions;
-      const session = loadActionsResult.actions.getSession();
-      document.querySelector("#button-text").textContent = `Pay ${session.total.total.amount}`;
+    // For additional capabilities supported by Stripe Payment Element with Checkout Session API
+    if (options.shippingOptions) { 
+      document.querySelector("#shipping-options").hidden = false;
     }
-
     if (options.adaptivePricing) {
       const currencySelectorElement = checkout.createCurrencySelectorElement();
       currencySelectorElement.mount('#currency-selector-element');
     }
+
+    // Load elements
     const contactDetailsElement = checkout.createContactDetailsElement();
     contactDetailsElement.mount("#contact-details-element");
     const paymentElement = checkout.createPaymentElement();
@@ -156,6 +163,7 @@ async function initializeSession(options) {
   })
 }
 
+// Using Payment Intent API
 // Initialize payment and display element
 async function initializePayment(amount) {
   // Create a payment intent
@@ -211,14 +219,13 @@ async function initializePayment(amount) {
 // ------- UI helpers for Confirmation flow ------
 // Display Payment Intent ID and amount
 function displayPaymentDetails(paymentIntent) {
-  console.log(paymentIntent);
-    const paymentDetails = document.querySelector("#payment-details");
+  const paymentDetails = document.querySelector("#payment-details");
   if (paymentIntent.status == "succeeded") {
     document.querySelector("#error").hidden = true;
     // Display correct payment amount to account for Adaptive Pricing
     var amountString = `${paymentIntent.currency.toUpperCase()} ${paymentIntent.amount/100}`;
-    if (paymentIntent.presentment_details.presentment_amount) {
-      amountString = `${paymentIntent.presentment_details.presentment_currency.toUpperCase()} ${paymentIntent.amount}`;
+    if (paymentIntent.presentment_details?.presentment_amount) {
+      amountString += `<br>(Paid In: ${paymentIntent.presentment_details.presentment_currency.toUpperCase()} ${paymentIntent.amount})`;
     }
     paymentDetails.innerHTML = `Thank you for your purchase. Your order has been completed. <br><br><b>Order ID</b>: ${paymentIntent.id} <br><b>Amount</b>: ${amountString}`
   }

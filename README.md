@@ -1,6 +1,7 @@
 ## Application overview
 The purpose of this demo is to demonstrate the Stripe checkout flow using the [Stripe Payment Element](https://docs.stripe.com/js/element/payment_element).
 This demo also sets up a local endpoint to receive webhook events. 
+For more technical details on this demo, please refer to [doc.md](doc.md)
 
 ## Prerequisites
 This demo is written in Javascript (Node.js) with the [Express framework](https://expressjs.com/).
@@ -50,7 +51,7 @@ Both APIs have been integrated in this demo for reference.
 
 3. Complete Payment on the checkout page. By default, all available payment methods are enabled, including Stripe Link.
 -  For Card Payments, use Stripe's [Test Cards](https://docs.stripe.com/testing)
-    - Sample Card Number: `4242 4242 4242 4242`, with any future dated expiry and 3 digit CVV'
+    - Sample Card Number: `4242 4242 4242 4242`, with any future dated expiry and 3 digit CVV
 - For Link Payments, select `Secure, fast checkout with Link` and input an email address. Reuse this email address for subsequent checkouts to see saved payment methods.
 4. Redirect to confirmation page and receive corresponding `payment_intent.succeeded` webhook event
 
